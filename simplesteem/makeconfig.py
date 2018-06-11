@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 
+
 class MakeConfig:
 
 
@@ -26,7 +27,7 @@ class MakeConfig:
 
 
     def make(self, **kwargs):
-        config_file = open('config.py','w')
+        config_file = open('config.py', 'w')
         config_file.write("#!/usr/bin/python3\n\n")
         for key, value in kwargs.items():
             config_file.write(key + ' = ' + value + "\n")

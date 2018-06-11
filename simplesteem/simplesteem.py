@@ -3,6 +3,7 @@
 import time
 import re
 import imp
+import os
 
 from steem import Steem
 from steem.post import Post
@@ -27,12 +28,13 @@ class SimpleSteem:
             setattr(self, key, value)
 
         try:
-            imp.find_module('config')
+            print (os.path.dirname(os.path.realpath(__file__)))
+            imp.find_module('config', [os.path.dirname(os.path.realpath(__file__))])
 
         except ImportError:
             makeconfig.MakeConfig().setup()
             
-        import config
+        from simplesteem import config
 
         try:
             self.mainaccount
