@@ -14,6 +14,7 @@ setup(
         'python-dateutil',
         'steem',
         'steemconnect',
+        'screenlogger',
     ],
     py_modules=['simplesteem'],
     include_package_data=True,
