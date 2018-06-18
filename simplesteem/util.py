@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 import urllib.request
 from urllib.error import HTTPError
-from mylogger.mylogger import Msg
+from screenlogger.screenlogger import Msg
 
 
 class Util:
