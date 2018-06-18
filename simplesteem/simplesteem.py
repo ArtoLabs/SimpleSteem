@@ -95,7 +95,7 @@ class SimpleSteem:
 
 
 
-    def verify_key (self, acctname, tokenkey):
+    def verify_key (self, acctname=None, tokenkey=None):
         if (re.match( r'^[A-Za-z0-9]+$', tokenkey) 
                         and len(tokenkey) <= 64):
             pubkey = PrivateKey(private_posting_key).pubkey or 0
@@ -111,11 +111,9 @@ class SimpleSteem:
             self.privatekey = None
             self.accesstoken = self.connect.get_token(tokenkey)
             if self.accesstoken:
-                if self.connect.username == acctname:
-                    self.refreshtoken = tokenkey
-                    return True
-                else:
-                    return False
+                self.username = self.connect.username
+                self.refreshtoken = self.connect.refresh_token
+                return True
             else:
                 return False
 

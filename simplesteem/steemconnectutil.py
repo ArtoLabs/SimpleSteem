@@ -2,7 +2,7 @@
 
 from steemconnect.client import Client
 from steemconnect.operations import Vote
-
+from screenlogger.screenlogger import Msg
 
 
 class SteemConnect:
@@ -19,6 +19,7 @@ class SteemConnect:
         self.permissions = permissions
         self.sc = None
         self.accesstoken = None
+        self.msg = Msg()
 
 
 
@@ -40,6 +41,7 @@ class SteemConnect:
         tokenobj = self.steemconnect().get_access_token(code)
         for t in tokenobj:
             if t == 'error':
+                self.msg.error_message(str(tokenobj[t]))
                 return False
             elif t == 'access_token':
                 self.username = tokenobj['username']
