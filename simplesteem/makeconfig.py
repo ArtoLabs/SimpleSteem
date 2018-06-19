@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 
-
+import os
 
 class MakeConfig:
 
 
 
     def setup (self):
-        mainaccount = self.add_quotes(self.enter_config_value("mainaccount", '"ned"'))
+        mainaccount = self.add_quotes(self.enter_config_value("mainaccount", 'ned'))
         keys = self.enter_config_value("keys", '[]')
         nodes = self.enter_config_value("nodes", '["https://steemd.minnowsupportproject.org",'
                                         + '"https://steemd.privex.io","https://gtg.steem.house:8090",'
@@ -27,10 +27,17 @@ class MakeConfig:
 
 
     def make(self, **kwargs):
-        config_file = open('config.py', 'w')
-        config_file.write("#!/usr/bin/python3\n\n")
-        for key, value in kwargs.items():
-            config_file.write(key + ' = ' + value + "\n")
+        configpath = os.path.dirname(os.path.abspath(__file__)) + "/config.py"
+        
+        print ("Writing to " + configpath)
+        with open(configpath, 'w+') as fh:
+            try:
+                fh.write("#!/usr/bin/python3\n\n")
+            except Exception as e:
+                print(e)
+            else:
+                for key, value in kwargs.items():
+                    fh.write(key + ' = ' + value + "\n")
 
 
 
