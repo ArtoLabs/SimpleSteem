@@ -62,7 +62,7 @@ class SimpleSteem:
 
         self.s = None
         self.c = None
-        self.msg = Msg()
+        self.msg = Msg("simplesteem.log", "~", "quiet")
         self.util = util.Util()
         self.connect = steemconnectutil.SteemConnect(self.client_id, 
             self.client_secret, self.callback_url, self.permissions)
@@ -98,7 +98,8 @@ class SimpleSteem:
     def verify_key (self, acctname=None, tokenkey=None):
         if (re.match( r'^[A-Za-z0-9]+$', tokenkey)
                         and tokenkey is not None
-                        and len(tokenkey) <= 64):
+                        and len(tokenkey) <= 64
+                        and len(tokenkey) >= 16):
             pubkey = PrivateKey(tokenkey).pubkey or 0
             pubkey2 = self.steem_instance().get_account(acctname)
             if str(pubkey) == str(pubkey2['posting']['key_auths'][0][0]):

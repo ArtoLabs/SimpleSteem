@@ -19,7 +19,7 @@ class SteemConnect:
         self.permissions = permissions
         self.sc = None
         self.accesstoken = None
-        self.msg = Msg()
+        self.msg = Msg("simplesteem.log", "~", "quiet")
 
 
 
