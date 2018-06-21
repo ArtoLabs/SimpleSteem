@@ -9,15 +9,19 @@ class MakeConfig:
     def setup (self):
         mainaccount = self.add_quotes(self.enter_config_value("mainaccount", 'ned'))
         keys = self.enter_config_value("keys", '[]')
-        nodes = self.enter_config_value("nodes", '["https://steemd.minnowsupportproject.org",'
-                                        + '"https://steemd.privex.io","https://gtg.steem.house:8090",'
-                                        + '"https://steemd.pevo.science","https://rpc.steemliberator.com"]')
+        nodes = self.enter_config_value("nodes", 
+                '["https://steemd.minnowsupportproject.org",'
+                + '"https://steemd.privex.io","https://gtg.steem.house:8090",'
+                + '"https://steemd.pevo.science","https://rpc.steemliberator.com"]')
         client_id = self.add_quotes(self.enter_config_value("client_id"))
         client_secret = self.add_quotes(self.enter_config_value("client_secret"))
         callback_url = self.add_quotes(self.enter_config_value("callback_url"))
         permissions = self.add_quotes(self.enter_config_value("permissions", "login,offline,vote"))
+        logpath = self.add_quotes(self.enter_config_value("logpath", "/var/log"))
+        screenmode = self.add_quotes(self.enter_config_value("screenmode", "quiet"))
         self.make(mainaccount=mainaccount, keys=keys, nodes=nodes, client_id=client_id, 
-            client_secret=client_secret, callback_url=callback_url, permissions=permissions)
+            client_secret=client_secret, callback_url=callback_url, permissions=permissions,
+            logpath=logpath, screenmode=screenmode)
 
 
 

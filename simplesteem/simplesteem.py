@@ -59,13 +59,26 @@ class SimpleSteem:
             self.permissions
         except:
             self.permissions = config.permissions
+        try:
+            self.logpath
+        except:
+            self.logpath = config.logpath
+        try:
+            self.screenmode
+        except:
+            self.screenmode = config.screenmode
 
         self.s = None
         self.c = None
-        self.msg = Msg("simplesteem.log", "~", "quiet")
+        self.msg = Msg("simplesteem.log", 
+                        self.logpath, 
+                        self.screenmode)
         self.util = util.Util()
-        self.connect = steemconnectutil.SteemConnect(self.client_id, 
-            self.client_secret, self.callback_url, self.permissions)
+        self.connect = steemconnectutil.SteemConnect(
+                        self.client_id, 
+                        self.client_secret, 
+                        self.callback_url, 
+                        self.permissions)
 
 
 
@@ -134,7 +147,8 @@ class SimpleSteem:
                 reward_fund["reward_balance"]).amount
             self.recent_claims = float(reward_fund["recent_claims"])
             self.base = Amount(
-                self.steem_instance().get_current_median_history_price()["base"]
+                self.steem_instance(
+                ).get_current_median_history_price()["base"]
                 ).amount
         return [self.reward_balance, self.recent_claims, self.base]
 
@@ -143,8 +157,10 @@ class SimpleSteem:
     def rshares_to_steem (self, rshares):
         self.reward_pool_balances()
         return round(
-            rshares * self.reward_balance / self.recent_claims * self.base,
-            4)
+            rshares 
+            * self.reward_balance 
+            / self.recent_claims 
+            * self.base, 4)
 
 
 
@@ -306,14 +322,14 @@ class SimpleSteem:
             author = self.mainaccount
         for num_of_retries in range(4):
             try:
-                blog = self.steem_instance().get_blog(author, 0, 30)
+                self.blog = self.steem_instance().get_blog(author, 0, 30)
             except Exception as e:
                 self.util.retry('''COULD NOT GET THE 
                                 MOST RECENT POST FOR 
                                 {}'''.format(author), 
                                 e, num_of_retries, 10)
             else:
-                for p in blog:
+                for p in self.blog:
                     age = self.util.days_back(p['comment']['created'])
                     if p['comment']['author'] == author and age == daysback:
                         return self.util.identifier(
