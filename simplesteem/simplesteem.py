@@ -13,7 +13,7 @@ from screenlogger.screenlogger import Msg
 from simplesteem import util
 from simplesteem import makeconfig
 from simplesteem import steemconnectutil
-
+from simplesteem import default
 
 
 class SimpleSteem:  
@@ -28,9 +28,7 @@ class SimpleSteem:
                 [os.path.dirname(os.path.realpath(__file__))])
         except ImportError:
             makeconfig.MakeConfig().setup()
-            
         from simplesteem import config
-
         try:
             self.mainaccount
         except:
@@ -67,7 +65,6 @@ class SimpleSteem:
             self.screenmode
         except:
             self.screenmode = config.screenmode
-
         self.s = None
         self.c = None
         self.msg = Msg("simplesteem.log", 
@@ -85,13 +82,13 @@ class SimpleSteem:
     def steem_instance(self):
         if self.s:
             return self.s
-        for x in range(3):
+        for x in range(default.max_retry):
             try:
                 self.s = Steem(keys=self.keys, 
                     nodes=[self.util.goodnode(self.nodes)])
             except Exception as e:
                 self.util.retry("COULD NOT GET STEEM INSTANCE", 
-                    e, num_of_retries, 60)
+                    e, num_of_retries, default.wait_time)
             else:
                 return self.s
         return False
@@ -115,7 +112,8 @@ class SimpleSteem:
                         and len(tokenkey) >= 16):
             pubkey = PrivateKey(tokenkey).pubkey or 0
             pubkey2 = self.steem_instance().get_account(acctname)
-            if str(pubkey) == str(pubkey2['posting']['key_auths'][0][0]):
+            if (str(pubkey) 
+                    == str(pubkey2['posting']['key_auths'][0][0])):
                 self.privatekey = tokenkey
                 self.refreshtoken = None
                 self.accesstoken = None
@@ -225,13 +223,12 @@ class SimpleSteem:
             self.msg.error_message(e)
             return False
         else:
-            time.sleep(5)
             return h
 
 
 
     def post(self, title, body, permlink, tags):
-        for num_of_retries in range(4):
+        for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().post(title, 
                                             body, 
@@ -252,12 +249,12 @@ class SimpleSteem:
                     self.util.retry('''A POST JUST CREATED 
                                     WAS NOT FOUND IN THE 
                                     BLOCKCHAIN {}'''.format(title), 
-                                    e, num_of_retries, 30)
+                                    e, num_of_retries, default.wait_time)
 
 
 
     def reply(self, permlink, msgbody):
-        for num_of_retries in range(4): 
+        for num_of_retries in range(default.max_retry): 
             try:
                 self.steem_instance().post("message", 
                                             msgbody, 
@@ -268,10 +265,10 @@ class SimpleSteem:
                                             None, None, False)
             except Exception as e:
                 self.util.retry("COULD NOT REPLY TO " + permlink, 
-                    e, num_of_retries, 30)
+                    e, num_of_retries, default.wait_time)
             else:
                 self.msg.message("Replied to " + permlink)
-                time.sleep(30)
+                time.sleep(20)
                 return True
 
 
@@ -300,40 +297,41 @@ class SimpleSteem:
 
 
 
-    def following(self, account=None):
+    def following(self, account=None, limit=100):
         if not account:
             account = self.mainaccount
-        following = []
+        followingnames = []
         try:
-            temp = self.steem_instance().get_following(account, 
-                '', 'blog', 100)
+            self.followed = self.steem_instance().get_following(account, 
+                '', 'blog', limit)
         except Exception as e:
             self.msg.error_message(e)
             return False
         else:
-            for a in temp:
-                following.append(a['following'])
-            return following
+            for a in self.followed:
+                followingnames.append(a['following'])
+            return followingnames
 
 
 
     def recent_post(self, author=None, daysback=0):
         if not author:
             author = self.mainaccount
-        for num_of_retries in range(4):
+        for num_of_retries in range(default.max_retry):
             try:
                 self.blog = self.steem_instance().get_blog(author, 0, 30)
             except Exception as e:
                 self.util.retry('''COULD NOT GET THE 
                                 MOST RECENT POST FOR 
                                 {}'''.format(author), 
-                                e, num_of_retries, 10)
+                                e, num_of_retries, default.wait_time)
             else:
                 for p in self.blog:
                     age = self.util.days_back(p['comment']['created'])
                     if age < 0:
                         age = 0
-                    if p['comment']['author'] == author and age == daysback:
+                    if (p['comment']['author'] == author 
+                                and age == daysback):
                         return self.util.identifier(
                             p['comment']['author'], 
                             p['comment']['permlink'])
@@ -347,13 +345,13 @@ class SimpleSteem:
 
 
 
-    def vote(self, identifier, weight):
-        for num_of_retries in range(4):
+    def vote(self, identifier, weight=100.0):
+        for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().vote(identifier, 
-                    100.0, self.mainaccount)
+                    weight, self.mainaccount)
                 self.msg.message("voted for " + identifier)
-                time.sleep(10)
+                time.sleep(5)
             except Exception as e:
                 if re.search(r'You have already voted in a similar way', str(e)):
                     self.msg.error_message('''Already voted on 
@@ -362,69 +360,26 @@ class SimpleSteem:
                 else:
                     self.util.retry('''COULD NOT VOTE ON 
                                     {}'''.format(identifier), 
-                                    e, num_of_retries, 10)
+                                    e, num_of_retries, default.wait_time)
             else:
                 return True
 
 
 
     def resteem(self, identifier):
-        for num_of_retries in range(4):
+        for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().resteem(
                     identifier, self.mainaccount)
                 self.msg.message("resteemed " + identifier)
-                time.sleep(30)
+                time.sleep(20)
             except Exception as e:
                 self.util.retry('''COULD NOT RESTEEM 
                                 {}'''.format(identifier), 
-                                e, num_of_retries, 10)
+                                e, num_of_retries, default.wait_time)
             else:
                 return True
 
 
-
-# Run as main
-
-if __name__ == "__main__":
-   
-    s = SimpleSteem()
-
-    followed = s.following()
-    pool = s.reward_pool_balances()
-    bal = s.check_balances()
-    vote_value = s.current_vote_value(bal[4], bal[2], 100, bal[3])
-    votepower = (bal[3] + s.util.calc_regenerated(bal[4])) / 100
-    identifier = s.recent_post()
-
-    print ("\n        ____________" + s.mainaccount + "_____________\n")
-    
-    print ("        Following " + str(len(followed)) + " Steemians\n")
-
-    print ("        Balances:\n")
-
-    print ("        " + str(bal[0]) + " SBD")
-
-    print ("        " + str(bal[1]) + " STEEM")
-
-    print ("        " + str(round(bal[2], 2)) + " STEEM POWER")
-
-    print ("        " + str(round(votepower, 2)) + "% Vote Power")
-
-    print ("        Current Vote Value: " + str(vote_value))
-
-    print ("        Last voted: " + str(bal[4]))
-
-    print ("\n        Most recent post: " + identifier + "\n")
-
-    print ("        _____________Reward Pool______________\n")
-
-    print ("        Reward Balance: " + str(pool[0]))
-
-    print ("        Recent Claims: " + str(pool[1]))
-
-    print ("        Price of STEEM: $" + str(pool[2]))
-
-    print ("\n\n")
 
 # EOF
