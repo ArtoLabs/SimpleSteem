@@ -225,7 +225,6 @@ class SimpleSteem:
             self.msg.error_message(e)
             return False
         else:
-
             time.sleep(5)
             return h
 
@@ -273,6 +272,7 @@ class SimpleSteem:
             else:
                 self.msg.message("Replied to " + permlink)
                 time.sleep(30)
+                return True
 
 
 
@@ -379,7 +379,6 @@ class SimpleSteem:
                 self.util.retry('''COULD NOT RESTEEM 
                                 {}'''.format(identifier), 
                                 e, num_of_retries, 10)
-                return False
             else:
                 return True
 
