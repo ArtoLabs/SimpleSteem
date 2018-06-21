@@ -17,7 +17,7 @@ class MakeConfig:
         client_secret = self.add_quotes(self.enter_config_value("client_secret"))
         callback_url = self.add_quotes(self.enter_config_value("callback_url"))
         permissions = self.add_quotes(self.enter_config_value("permissions", "login,offline,vote"))
-        logpath = self.add_quotes(self.enter_config_value("logpath", "/var/log"))
+        logpath = self.add_quotes(self.enter_config_value("logpath", None))
         screenmode = self.add_quotes(self.enter_config_value("screenmode", "quiet"))
         self.make(mainaccount=mainaccount, keys=keys, nodes=nodes, client_id=client_id, 
             client_secret=client_secret, callback_url=callback_url, permissions=permissions,
