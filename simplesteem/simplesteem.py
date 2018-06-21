@@ -331,6 +331,8 @@ class SimpleSteem:
             else:
                 for p in self.blog:
                     age = self.util.days_back(p['comment']['created'])
+                    if age < 0:
+                        age = 0
                     if p['comment']['author'] == author and age == daysback:
                         return self.util.identifier(
                             p['comment']['author'], 

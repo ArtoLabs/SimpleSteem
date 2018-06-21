@@ -45,8 +45,10 @@ class Util:
 
 
     def days_back(self, date):
-        return (datetime.now() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).days
-
+        daysback = (datetime.now() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).days
+        if daysback < 0:
+            daysback = 0
+        return daysback
 
 
     def scale_vote(self, value):
