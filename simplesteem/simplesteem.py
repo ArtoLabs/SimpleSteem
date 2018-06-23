@@ -241,8 +241,8 @@ class SimpleSteem:
                     e, num_of_retries, 10)
             else:
                 time.sleep(60)
-                checkident = self.recent_post(self.mainaccount)
-                ident = self.identifier(self.mainaccount, permlink)
+                checkident = self.recent_post()
+                ident = self.util.identifier(self.mainaccount, permlink)
                 if checkident == ident:
                     return True
                 else:
