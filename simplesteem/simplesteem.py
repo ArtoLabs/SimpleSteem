@@ -82,7 +82,7 @@ class SimpleSteem:
     def steem_instance(self):
         if self.s:
             return self.s
-        for x in range(default.max_retry):
+        for num_of_retries in range(default.max_retry):
             try:
                 self.s = Steem(keys=self.keys, 
                     nodes=[self.util.goodnode(self.nodes)])
