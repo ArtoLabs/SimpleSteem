@@ -322,13 +322,6 @@ returns float
 ```
 
 
-### retry
-
-Creates the retry message and waits a given time if a call to Steem-Python fails.
-
-```
-steem.util.retry(self, msg, e, retry_num, waittime)
-```
 
 
 
