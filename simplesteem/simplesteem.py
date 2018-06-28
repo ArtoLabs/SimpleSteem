@@ -240,7 +240,7 @@ class SimpleSteem:
                 self.util.retry("COULD NOT POST '" + title + "'", 
                     e, num_of_retries, 10)
             else:
-                time.sleep(60)
+                time.sleep(20)
                 checkident = self.recent_post()
                 ident = self.util.identifier(self.mainaccount, permlink)
                 if checkident == ident:

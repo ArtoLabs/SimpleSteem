@@ -51,6 +51,7 @@ class Util:
         return daysback
 
 
+
     def scale_vote(self, value):
         value = int(value) * 100
         if value < 150:
