@@ -22,10 +22,10 @@ class Util:
         for n in nodelist:
             req = urllib.request.Request(url=n)
             try:
+                self.msg.message("Trying " + n)
                 urllib.request.urlopen(req)
             except HTTPError as e:
                 self.msg.error_message(e)
-                return False
             else:
                 self.msg.message("Using " + n)
                 return n
