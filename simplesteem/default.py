@@ -1,2 +1,2 @@
-max_retry = 3
-wait_time = 60
+max_retry = 1
+wait_time = 20
