@@ -76,7 +76,7 @@ class SimpleSteem:
                         self.client_secret, 
                         self.callback_url, 
                         self.permissions)
-
+        self.checkedaccount = None
 
 
     def steem_instance(self):
@@ -162,23 +162,69 @@ class SimpleSteem:
 
 
 
-    def current_vote_value(self, lastvotetime=None, 
-            steempower=0, voteweight=100, votepower=0):
-        c = Converter()
-        voteweight = self.util.scale_vote(voteweight)
-        if votepower > 0 and votepower < 101:
-            votepower = self.util.scale_vote(votepower) 
+    def current_vote_value(self, *kwargs):
+        try:
+            kwargs.items()
+        except:
+            pass
         else:
-            votepower = votepower + self.util.calc_regenerated(lastvotetime)
-        self.votepower = round(votepower / 100, 2)
-        self.rshares = c.sp_to_rshares(steempower, votepower, voteweight)
-        return self.rshares_to_steem(self.rshares)
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+        try:
+            self.lastvotetime
+        except:
+            self.lastvotetime=None
+        try:
+            self.steempower
+        except:
+            self.steempower=0
+        try:
+            self.voteweight
+        except:
+            self.voteweight=100
+        try:
+            self.votepower
+        except:
+            self.votepower=0
+        try:
+            self.account
+        except:
+            self.account=None              
+        if self.account is None:
+            self.account = self.mainaccount
+        if (self.lastvotetime is None 
+                or self.steempower == 0 
+                or self.votepower == 0):
+            self.check_balances(self.account)
+        c = Converter()
+        self.voteweight = self.util.scale_vote(self.voteweight)
+        if self.votepower > 0 and self.votepower < 101:
+            self.votepower = self.util.scale_vote(self.votepower) 
+        else:
+            self.votepower = (self.votepower 
+                            + self.util.calc_regenerated(
+                                self.lastvotetime))
+        self.vpow = round(self.votepower / 100, 2)
+        self.rshares = c.sp_to_rshares(self.steempower, 
+                                        self.votepower, 
+                                        self.voteweight)
+        self.votevalue = self.rshares_to_steem(self.rshares)
+        return self.votevalue
 
 
 
     def check_balances(self, account=None):
-        if not account:
+        if account is None:
             account = self.mainaccount
+        try:
+            self.votepower
+        except:
+            pass
+        else:
+            if account == self.checkedaccount:
+                return [self.sbdbal, self.steembal, self.steempower, 
+                        self.votepower, self.lastvotetime]
+        self.checkedaccount = account
         try:
             acct = self.steem_instance().get_account(account)
         except Exception as e:
