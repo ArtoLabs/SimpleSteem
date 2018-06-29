@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     python_requires='>=3.0',
     name='SimpleSteem',
-    version='0.5.5',
+    version='1.0',
     packages=['simplesteem'],
     license='MIT',
     keywords='steem steemit steem-python python3',
