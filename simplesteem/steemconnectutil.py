@@ -24,6 +24,9 @@ class SteemConnect:
 
 
     def steemconnect(self, accesstoken=None):
+        ''' Initializes the SteemConnect Client
+        class
+        '''
         if self.sc:
             return self.sc
         if accesstoken:
@@ -38,6 +41,9 @@ class SteemConnect:
 
 
     def get_token(self, code=None):
+        ''' Uses a SteemConnect refresh token
+        to retreive an access token
+        '''
         tokenobj = self.steemconnect().get_access_token(code)
         for t in tokenobj:
             if t == 'error':
@@ -51,6 +57,9 @@ class SteemConnect:
 
 
     def auth_url(self):
+        ''' Returns the SteemConnect url
+        used for authentication
+        '''
         return self.steemconnect().get_login_url(
                             self.callback_url, 
                             self.permissions, 
@@ -59,6 +68,9 @@ class SteemConnect:
 
 
     def vote(self, voter, author, permlink, voteweight):
+        ''' Uses a SteemConnect accses token
+        to vote.
+        '''
         vote = Vote(voter, author, permlink, voteweight)
         result = self.steemconnect().broadcast(
             [vote.to_operation_structure()])

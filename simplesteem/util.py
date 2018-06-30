@@ -20,6 +20,10 @@ class Util:
 
 
     def goodnode(self, nodelist):
+        ''' Goes through the provided list
+        and returns the first server node
+        that does not return an error.
+        '''
         for n in nodelist:
             req = urllib.request.Request(url=n)
             try:
@@ -34,11 +38,17 @@ class Util:
 
 
     def identifier(self, author, permlink):
+        ''' Converts an author's name and permlink 
+        into an identifier
+        '''
         return ("@" + author + "/" + permlink)
 
 
 
     def permlink(self, identifier):
+        ''' Deconstructs an identifier into
+        an account name and permlink
+        '''
         temp = identifier.split("@")
         temp2 = temp[1].split("/")
         return [temp2[0], temp2[1]]
@@ -46,6 +56,9 @@ class Util:
 
 
     def days_back(self, date):
+        ''' Gives a number (integer) of days
+        since a given date
+        '''
         daysback = (datetime.now() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).days
         if daysback < 0:
             daysback = 0
@@ -54,6 +67,10 @@ class Util:
 
 
     def scale_vote(self, value):
+        ''' Scales a vote value between 1 and 100
+        to 150 to 10000 as required by Steem-Python
+        for certain method calls
+        '''
         value = int(value) * 100
         if value < 150:
             value = 150
@@ -64,6 +81,10 @@ class Util:
 
 
     def calc_regenerated(self, lastvotetime):
+        ''' Uses math formula to calculate the amount
+        of steem power that would have been regenerated
+        given a certain datetime object
+        '''
         delta = datetime.utcnow() - datetime.strptime(lastvotetime,'%Y-%m-%dT%H:%M:%S')
         td = delta.days
         ts = delta.seconds
@@ -73,6 +94,10 @@ class Util:
 
 
     def retry(self, msg, e, retry_num, waittime):
+        ''' Creates the retry message and waits the 
+        given default time when a method call fails
+        or a server does not respond appropriately.
+        '''
         self.msg.error_message(msg)
         self.msg.error_message(e)
         self.msg.error_message("Attempt number " + str(retry_num) + ". Retrying in " + str(waittime) + " seconds.")

@@ -5,8 +5,11 @@ import os
 class MakeConfig:
 
 
-
     def setup (self):
+        ''' Runs only the first time SimpleSteem() 
+        is instantiated. Prompts user for the values
+        that are then written to config.py
+        '''
         mainaccount = self.add_quotes(self.enter_config_value("mainaccount", 'ned'))
         keys = self.enter_config_value("keys", '[]')
         nodes = self.enter_config_value("nodes", 
@@ -24,15 +27,15 @@ class MakeConfig:
             logpath=logpath, screenmode=screenmode)
 
 
-
     def add_quotes(self, value):
         return '"'+str(value)+'"'
 
 
-
     def make(self, **kwargs):
+        ''' takes the arguments and writes them as 
+        variable / value pairs to config.py
+        '''
         configpath = os.path.dirname(os.path.abspath(__file__)) + "/config.py"
-        
         print ("Writing to " + configpath)
         with open(configpath, 'w+') as fh:
             try:
@@ -44,8 +47,9 @@ class MakeConfig:
                     fh.write(key + ' = ' + value + "\n")
 
 
-
     def enter_config_value(self, key, default=""):
+        ''' Prompts user for a value
+        '''
         value = input('Please enter a value for ' + key + ': ')
         if value:
             return value
@@ -53,15 +57,9 @@ class MakeConfig:
             return default
 
 
-
-
 # Run as main
-
 if __name__ == "__main__":
-
     m = MakeConfig()
-
-
 
 
 # EOF

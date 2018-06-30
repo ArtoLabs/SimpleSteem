@@ -19,8 +19,11 @@ from simplesteem import default
 class SimpleSteem:  
 
 
-
     def __init__(self, **kwargs):
+        ''' Looks for config.py if not found runs
+        setup which prompts user for the config values
+        one time only.
+        '''
         for key, value in kwargs.items():
             setattr(self, key, value)
         try:
@@ -80,6 +83,10 @@ class SimpleSteem:
 
 
     def steem_instance(self):
+        ''' Returns the steem instance if it already exists
+        otherwise uses the goodnode method to feth a node
+        and instantiate the Steem class.
+        '''
         if self.s:
             return self.s
         for num_of_retries in range(default.max_retry):
@@ -106,6 +113,10 @@ class SimpleSteem:
 
 
     def verify_key (self, acctname=None, tokenkey=None):
+        ''' This can be used to verify either a private
+        posting key or to verify a steemconnect refresh
+        token and retreive the access token.
+        '''
         if (re.match( r'^[A-Za-z0-9]+$', tokenkey)
                         and tokenkey is not None
                         and len(tokenkey) <= 64
@@ -137,6 +148,12 @@ class SimpleSteem:
 
 
     def reward_pool_balances(self):
+        ''' Fetches and returns the 3 values
+        needed to calculate the reward pool
+        and other associated values such as rshares.
+        Returns the reward balance, all recent claims
+        and the current price of steem.
+        '''
         try:
             self.reward_balance
         except:
@@ -163,6 +180,10 @@ class SimpleSteem:
 
 
     def current_vote_value(self, *kwargs):
+        ''' Ensures the needed variables are
+        created and set to defaults although
+        a variable number of variables are given.
+        '''
         try:
             kwargs.items()
         except:
@@ -214,6 +235,12 @@ class SimpleSteem:
 
 
     def check_balances(self, account=None):
+        ''' Because this method has the potential to be
+        called many times while calculating other values
+        it essentially "caches" the balances and only
+        fetches a new balance if the account name has
+        changed. 
+        '''
         if account is None:
             account = self.mainaccount
         try:
@@ -260,6 +287,9 @@ class SimpleSteem:
 
 
     def get_my_history(self, account=None, limit=100):
+        ''' Fetches the account history from
+        most recent back
+        '''
         if not account:
             account = self.mainaccount
         try:
@@ -274,6 +304,11 @@ class SimpleSteem:
 
 
     def post(self, title, body, permlink, tags):
+        ''' Used for creating a main post
+        to an account's blog. Waits 20 seconds
+        after posting as that is the required 
+        amount of time between posting.
+        '''
         for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().post(title, 
@@ -300,6 +335,11 @@ class SimpleSteem:
 
 
     def reply(self, permlink, msgbody):
+        ''' Used for creating a reply to a 
+        post. Waits 20 seconds
+        after posting as that is the required 
+        amount of time between posting.
+        '''
         for num_of_retries in range(default.max_retry): 
             try:
                 self.steem_instance().post("message", 
@@ -320,6 +360,8 @@ class SimpleSteem:
 
 
     def follow(self, author):
+        ''' Follows the given account
+        '''
         try:
             self.steem_instance().commit.follow(author, 
                 ['blog'], self.mainaccount)
@@ -332,6 +374,8 @@ class SimpleSteem:
 
 
     def unfollow(self, author):
+        ''' Unfollows the given account
+        '''
         try:
             self.steem_instance().commit.unfollow(author, 
                 ['blog'], self.mainaccount)
@@ -344,6 +388,11 @@ class SimpleSteem:
 
 
     def following(self, account=None, limit=100):
+        ''' Gets a list of all the followers
+        of a given account. If no account is given
+        the followers of the mainaccount are
+        returned.
+        '''
         if not account:
             account = self.mainaccount
         followingnames = []
@@ -361,6 +410,13 @@ class SimpleSteem:
 
 
     def recent_post(self, author=None, daysback=0):
+        ''' Returns the most recent post from the account
+        given. If the days back is greater than zero
+        then the most recent post is returned for that
+        day. For instance if daysback is set to 2
+        then it will be the most recent post from 2 days
+        ago (48 hours).
+        '''
         if not author:
             author = self.mainaccount
         for num_of_retries in range(default.max_retry):
@@ -385,6 +441,9 @@ class SimpleSteem:
 
 
     def vote_history(self, permlink, author=None):
+        ''' Returns the raw vote history of a
+        given post from a given account
+        '''
         if not author:
             author = self.mainaccount
         return self.steem_instance().get_active_votes(author, permlink)
@@ -392,6 +451,9 @@ class SimpleSteem:
 
 
     def vote(self, identifier, weight=100.0):
+        ''' Waits 5 seconds as that is the required amount 
+        of time between votes.
+        '''
         for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().vote(identifier, 
@@ -413,6 +475,9 @@ class SimpleSteem:
 
 
     def resteem(self, identifier):
+        ''' Waits 20 seconds as that is the required 
+        amount of time between resteems
+        '''
         for num_of_retries in range(default.max_retry):
             try:
                 self.steem_instance().resteem(
