@@ -8,7 +8,6 @@ from screenlogger.screenlogger import Msg
 class SteemConnect:
 
 
-
     def __init__(self, client_id="", 
                     client_secret="", 
                     callback_url="", 
@@ -20,7 +19,6 @@ class SteemConnect:
         self.sc = None
         self.accesstoken = None
         self.msg = Msg("simplesteem.log", "~", "quiet")
-
 
 
     def steemconnect(self, accesstoken=None):
@@ -39,7 +37,6 @@ class SteemConnect:
         return self.sc
 
 
-
     def get_token(self, code=None):
         ''' Uses a SteemConnect refresh token
         to retreive an access token
@@ -55,7 +52,6 @@ class SteemConnect:
                 return tokenobj[t]
 
 
-
     def auth_url(self):
         ''' Returns the SteemConnect url
         used for authentication
@@ -64,7 +60,6 @@ class SteemConnect:
                             self.callback_url, 
                             self.permissions, 
                             "get_refresh_token=True")
-
 
 
     def vote(self, voter, author, permlink, voteweight):
@@ -77,7 +72,6 @@ class SteemConnect:
         return result
 
 
-
 # Run as main
 
 if __name__ == "__main__":
@@ -87,4 +81,3 @@ if __name__ == "__main__":
 
 
 # EOF
-

@@ -101,7 +101,6 @@ class SimpleSteem:
         return False
 
 
-
     def claim_rewards(self):
         if self.steem_instance().claim_reward_balance(
                 account=self.mainaccount):
@@ -109,7 +108,6 @@ class SimpleSteem:
             return True
         else:
             return False
-
 
 
     def verify_key (self, acctname=None, tokenkey=None):
@@ -146,7 +144,6 @@ class SimpleSteem:
             return False
 
 
-
     def reward_pool_balances(self):
         ''' Fetches and returns the 3 values
         needed to calculate the reward pool
@@ -168,7 +165,6 @@ class SimpleSteem:
         return [self.reward_balance, self.recent_claims, self.base]
 
 
-
     def rshares_to_steem (self, rshares):
         self.reward_pool_balances()
         return round(
@@ -176,7 +172,6 @@ class SimpleSteem:
             * self.reward_balance 
             / self.recent_claims 
             * self.base, 4)
-
 
 
     def current_vote_value(self, *kwargs):
@@ -233,7 +228,6 @@ class SimpleSteem:
         return self.votevalue
 
 
-
     def check_balances(self, account=None):
         ''' Because this method has the potential to be
         called many times while calculating other values
@@ -273,7 +267,6 @@ class SimpleSteem:
                     self.votepower, self.lastvotetime]
 
 
-
     def transfer_funds(self, to, amount, denom, msg):
         try:
             self.steem_instance().commit.transfer(to, 
@@ -283,7 +276,6 @@ class SimpleSteem:
             return False
         else:
             return True
-
 
 
     def get_my_history(self, account=None, limit=100):
@@ -300,7 +292,6 @@ class SimpleSteem:
             return False
         else:
             return h
-
 
 
     def post(self, title, body, permlink, tags):
@@ -333,7 +324,6 @@ class SimpleSteem:
                                     e, num_of_retries, default.wait_time)
 
 
-
     def reply(self, permlink, msgbody):
         ''' Used for creating a reply to a 
         post. Waits 20 seconds
@@ -358,7 +348,6 @@ class SimpleSteem:
                 return True
 
 
-
     def follow(self, author):
         ''' Follows the given account
         '''
@@ -372,7 +361,6 @@ class SimpleSteem:
             return True
 
 
-
     def unfollow(self, author):
         ''' Unfollows the given account
         '''
@@ -384,7 +372,6 @@ class SimpleSteem:
             return False
         else:
             return True
-
 
 
     def following(self, account=None, limit=100):
@@ -406,7 +393,6 @@ class SimpleSteem:
             for a in self.followed:
                 followingnames.append(a['following'])
             return followingnames
-
 
 
     def recent_post(self, author=None, daysback=0):
@@ -439,7 +425,6 @@ class SimpleSteem:
                             p['comment']['permlink'])
 
 
-
     def vote_history(self, permlink, author=None):
         ''' Returns the raw vote history of a
         given post from a given account
@@ -447,7 +432,6 @@ class SimpleSteem:
         if not author:
             author = self.mainaccount
         return self.steem_instance().get_active_votes(author, permlink)
-
 
 
     def vote(self, identifier, weight=100.0):
@@ -473,7 +457,6 @@ class SimpleSteem:
                 return True
 
 
-
     def resteem(self, identifier):
         ''' Waits 20 seconds as that is the required 
         amount of time between resteems
@@ -490,7 +473,6 @@ class SimpleSteem:
                                 e, num_of_retries, default.wait_time)
             else:
                 return True
-
 
 
 # EOF

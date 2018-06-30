@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-
 import time
 import re
 import os
@@ -13,10 +12,8 @@ from screenlogger.screenlogger import Msg
 class Util:
 
 
-
     def __init__(self):
         self.msg = Msg()
-
 
 
     def goodnode(self, nodelist):
@@ -36,13 +33,11 @@ class Util:
                 return n
 
 
-
     def identifier(self, author, permlink):
         ''' Converts an author's name and permlink 
         into an identifier
         '''
         return ("@" + author + "/" + permlink)
-
 
 
     def permlink(self, identifier):
@@ -54,7 +49,6 @@ class Util:
         return [temp2[0], temp2[1]]
 
 
-
     def days_back(self, date):
         ''' Gives a number (integer) of days
         since a given date
@@ -63,7 +57,6 @@ class Util:
         if daysback < 0:
             daysback = 0
         return daysback
-
 
 
     def scale_vote(self, value):
@@ -79,7 +72,6 @@ class Util:
         return value
 
 
-
     def calc_regenerated(self, lastvotetime):
         ''' Uses math formula to calculate the amount
         of steem power that would have been regenerated
@@ -92,7 +84,6 @@ class Util:
         return tt * 10000 / 86400 / 5
 
 
-
     def retry(self, msg, e, retry_num, waittime):
         ''' Creates the retry message and waits the 
         given default time when a method call fails
@@ -102,7 +93,6 @@ class Util:
         self.msg.error_message(e)
         self.msg.error_message("Attempt number " + str(retry_num) + ". Retrying in " + str(waittime) + " seconds.")
         time.sleep(waittime)
-
 
 
 
