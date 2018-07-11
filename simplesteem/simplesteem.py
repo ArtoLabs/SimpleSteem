@@ -8,7 +8,6 @@ from steem import Steem
 from steem.post import Post
 from steem.amount import Amount
 from steem.dex import Dex
-from steem.converter import Converter
 from steembase.account import PrivateKey
 from screenlogger.screenlogger import Msg
 from simplesteem import util
@@ -71,6 +70,7 @@ class SimpleSteem:
             self.screenmode = config.screenmode
         self.s = None
         self.c = None
+        self.dex = None
         self.msg = Msg("simplesteem.log", 
                         self.logpath, 
                         self.screenmode)
@@ -177,6 +177,15 @@ class SimpleSteem:
             * self.base, 4)
 
 
+    def global_props(self):
+        if self.util.info is None:
+            self.util.info = self.steem_instance().get_dynamic_global_properties()
+            self.util.total_vesting_fund_steem = Amount(self.util.info["total_vesting_fund_steem"]).amount
+            self.util.total_vesting_shares = Amount(self.util.info["total_vesting_shares"]).amount
+            self.util.vote_power_reserve_rate = self.util.info["vote_power_reserve_rate"]
+        return self.util.info
+
+
     def current_vote_value(self, *kwargs):
         ''' Ensures the needed variables are
         created and set to defaults although
@@ -212,19 +221,19 @@ class SimpleSteem:
         if self.account is None:
             self.account = self.mainaccount
         if (self.lastvotetime is None 
-                or self.steempower == 0 
-                or self.votepower == 0):
+                        or self.steempower == 0 
+                        or self.votepower == 0):
             self.check_balances(self.account)
-        c = Converter()
         self.voteweight = self.util.scale_vote(self.voteweight)
         if self.votepower > 0 and self.votepower < 101:
             self.votepower = self.util.scale_vote(self.votepower) 
         else:
             self.votepower = (self.votepower 
                             + self.util.calc_regenerated(
-                                self.lastvotetime))
+                            self.lastvotetime))
         self.vpow = round(self.votepower / 100, 2)
-        self.rshares = c.sp_to_rshares(self.steempower, 
+        self.global_props()
+        self.rshares = self.util.sp_to_rshares(self.steempower, 
                                         self.votepower, 
                                         self.voteweight)
         self.votevalue = self.rshares_to_steem(self.rshares)
@@ -242,7 +251,7 @@ class SimpleSteem:
             if account is None:
                 account = self.mainaccount
             try:
-                self.votepower
+                self.steempower
             except:
                 pass
             else:
@@ -255,7 +264,6 @@ class SimpleSteem:
             except Exception as e:
                 self.msg.error_message(e)
             else:
-                c = Converter()
                 self.sbdbal = Amount(acct['sbd_balance']).amount
                 self.steembal = Amount(acct['balance']).amount
                 self.votepower = acct['voting_power']
@@ -263,11 +271,15 @@ class SimpleSteem:
                 vs = Amount(acct['vesting_shares']).amount
                 dvests = Amount(acct['delegated_vesting_shares']).amount
                 rvests = Amount(acct['received_vesting_shares']).amount
-                vests = (float(vs) - float(dvests)) + float(rvests) 
-                self.steempower = c.vests_to_sp(vests)
-                time.sleep(5)
-                return [self.sbdbal, self.steembal, self.steempower, 
-                        self.votepower, self.lastvotetime]
+                vests = (float(vs) - float(dvests)) + float(rvests)
+                try:
+                    self.global_props()
+                    self.steempower = self.util.vests_to_sp(vests)
+                except Exception as e:
+                    self.msg.error_message(e)
+                else:
+                    return [self.sbdbal, self.steembal, self.steempower, 
+                            self.votepower, self.lastvotetime]
 
 
     def transfer_funds(self, to, amount, denom, msg):
@@ -479,8 +491,8 @@ class SimpleSteem:
 
 
     def dex_ticker(self):
-        d = Dex(self.steem_instance())
-        self.ticker = d.get_ticker();
+        self.dex = Dex(self.steem_instance())
+        self.ticker = self.dex.get_ticker();
         return self.ticker
 
 
@@ -489,9 +501,9 @@ class SimpleSteem:
             account = self.mainaccount
         best_price  = self.dex_ticker()['highest_bid']
         try:
-            d.sell(steem, "STEEM", best_price, account=account)
+            self.dex.sell(steem, "STEEM", best_price, account=account)
         except Exception as e:
-            self.msg.error_message("COULD NOT SELL STEEM FOR SBD")
+            self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + e)
             return False
         else:
             return True
