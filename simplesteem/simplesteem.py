@@ -478,4 +478,24 @@ class SimpleSteem:
                 return True
 
 
+    def dex_ticker(self):
+        d = Dex(self.steem_instance())
+        self.ticker = d.get_ticker();
+        return self.ticker
+
+
+    def steem_to_sbd(self, steem, account=None):
+        if not account:
+            account = self.mainaccount
+        best_price  = self.dex_ticker()['highest_bid']
+        try:
+            d.sell(steem, "STEEM", best_price, account=account)
+        except Exception as e:
+            self.msg.error_message("COULD NOT SELL STEEM FOR SBD")
+            return False
+        else:
+            return True
+
+
+
 # EOF
