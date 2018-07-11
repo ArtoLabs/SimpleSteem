@@ -509,5 +509,17 @@ class SimpleSteem:
             return True
 
 
+    def sbd_to_steem(self, sbd, account=None):
+        if not account:
+            account = self.mainaccount
+        best_price  = self.dex_ticker()['lowest_ask']
+        try:
+            self.dex.sell(steem, "SBD", best_price, account=account)
+        except Exception as e:
+            self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + e)
+            return False
+        else:
+            return True
+
 
 # EOF
