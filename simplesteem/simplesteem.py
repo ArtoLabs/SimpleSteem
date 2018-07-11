@@ -7,6 +7,7 @@ import os
 from steem import Steem
 from steem.post import Post
 from steem.amount import Amount
+from steem.dex import Dex
 from steem.converter import Converter
 from steembase.account import PrivateKey
 from screenlogger.screenlogger import Msg
@@ -73,7 +74,9 @@ class SimpleSteem:
         self.msg = Msg("simplesteem.log", 
                         self.logpath, 
                         self.screenmode)
-        self.util = util.Util()
+        self.util = util.Util("simplesteem.log", 
+                        self.logpath, 
+                        self.screenmode)
         self.connect = steemconnectutil.SteemConnect(
                         self.client_id, 
                         self.client_secret, 
@@ -253,15 +256,15 @@ class SimpleSteem:
             return False
         else:
             c = Converter()
-            self.sbdbal = Amount(acct['sbd_balance']).amount or 0
-            self.steembal = Amount(acct['balance']).amount or 0
+            self.sbdbal = Amount(acct['sbd_balance']).amount
+            self.steembal = Amount(acct['balance']).amount
             self.votepower = acct['voting_power']
             self.lastvotetime = acct['last_vote_time']
             vs = Amount(acct['vesting_shares']).amount
             dvests = Amount(acct['delegated_vesting_shares']).amount
             rvests = Amount(acct['received_vesting_shares']).amount
             vests = (float(vs) - float(dvests)) + float(rvests) 
-            self.steempower = c.vests_to_sp(vests) or 0
+            self.steempower = c.vests_to_sp(vests)
             time.sleep(5)
             return [self.sbdbal, self.steembal, self.steempower, 
                     self.votepower, self.lastvotetime]

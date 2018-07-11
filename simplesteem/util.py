@@ -12,8 +12,8 @@ from screenlogger.screenlogger import Msg
 class Util:
 
 
-    def __init__(self):
-        self.msg = Msg()
+    def __init__(self, filename, path, screenmode):
+        self.msg = Msg(filename, path, screenmode)
 
 
     def goodnode(self, nodelist):
