@@ -238,36 +238,36 @@ class SimpleSteem:
         fetches a new balance if the account name has
         changed. 
         '''
-        if account is None:
-            account = self.mainaccount
-        try:
-            self.votepower
-        except:
-            pass
-        else:
-            if account == self.checkedaccount:
+        for num_of_retries in range(default.max_retry):
+            if account is None:
+                account = self.mainaccount
+            try:
+                self.votepower
+            except:
+                pass
+            else:
+                if account == self.checkedaccount:
+                    return [self.sbdbal, self.steembal, self.steempower, 
+                            self.votepower, self.lastvotetime]
+            self.checkedaccount = account
+            try:
+                acct = self.steem_instance().get_account(account)
+            except Exception as e:
+                self.msg.error_message(e)
+            else:
+                c = Converter()
+                self.sbdbal = Amount(acct['sbd_balance']).amount
+                self.steembal = Amount(acct['balance']).amount
+                self.votepower = acct['voting_power']
+                self.lastvotetime = acct['last_vote_time']
+                vs = Amount(acct['vesting_shares']).amount
+                dvests = Amount(acct['delegated_vesting_shares']).amount
+                rvests = Amount(acct['received_vesting_shares']).amount
+                vests = (float(vs) - float(dvests)) + float(rvests) 
+                self.steempower = c.vests_to_sp(vests)
+                time.sleep(5)
                 return [self.sbdbal, self.steembal, self.steempower, 
                         self.votepower, self.lastvotetime]
-        self.checkedaccount = account
-        try:
-            acct = self.steem_instance().get_account(account)
-        except Exception as e:
-            self.msg.error_message(e)
-            return False
-        else:
-            c = Converter()
-            self.sbdbal = Amount(acct['sbd_balance']).amount
-            self.steembal = Amount(acct['balance']).amount
-            self.votepower = acct['voting_power']
-            self.lastvotetime = acct['last_vote_time']
-            vs = Amount(acct['vesting_shares']).amount
-            dvests = Amount(acct['delegated_vesting_shares']).amount
-            rvests = Amount(acct['received_vesting_shares']).amount
-            vests = (float(vs) - float(dvests)) + float(rvests) 
-            self.steempower = c.vests_to_sp(vests)
-            time.sleep(5)
-            return [self.sbdbal, self.steembal, self.steempower, 
-                    self.votepower, self.lastvotetime]
 
 
     def transfer_funds(self, to, amount, denom, msg):
