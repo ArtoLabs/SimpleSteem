@@ -19,6 +19,7 @@ class Util:
         self.total_vesting_shares = None
         self.vote_power_reserve_rate = None
         self.info = None
+        self.currentnode = 0
 
 
     def goodnode(self, nodelist):
@@ -26,16 +27,20 @@ class Util:
         and returns the first server node
         that does not return an error.
         '''
-        for n in nodelist:
-            req = urllib.request.Request(url=n)
+        for n in range(self.currentnode, len(nodelist)-1):
+            req = urllib.request.Request(url=nodelist[n])
             try:
-                self.msg.message("Trying " + n)
+                self.msg.message("Trying node " + str(n) + ": " + nodelist[n])
                 urllib.request.urlopen(req)
             except HTTPError as e:
                 self.msg.error_message(e)
             else:
-                self.msg.message("Using " + n)
-                return n
+                if self.currentnode == (len(nodelist)-1):
+                    self.currentnode = 0
+                else:
+                    self.currentnode = n + 1;
+                self.msg.message("Using " + nodelist[n])
+                return nodelist[n]
 
 
     def identifier(self, author, permlink):
