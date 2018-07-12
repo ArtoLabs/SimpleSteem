@@ -4,6 +4,7 @@ import time
 import re
 import imp
 import os
+import json
 from steem import Steem
 from steem.post import Post
 from steem.amount import Amount
@@ -258,11 +259,8 @@ class SimpleSteem:
 
 
     def check_balances(self, account=None):
-        ''' Because this method has the potential to be
-        called many times while calculating other values
-        it essentially "caches" the balances and only
-        fetches a new balance if the account name has
-        changed. 
+        ''' Fetches an account balance and makes
+        necessary conversions
         '''
         self.sbdbal = Amount(self.account(account)['sbd_balance']).amount
         self.steembal = Amount(self.account(account)['balance']).amount
@@ -274,6 +272,8 @@ class SimpleSteem:
         vests = (float(vs) - float(dvests)) + float(rvests)
         try:
             self.global_props()
+            self.steempower_delegated = self.util.vests_to_sp(dvests)
+            self.steempower_raw = self.util.vests_to_sp(vs)
             self.steempower = self.util.vests_to_sp(vests)
         except Exception as e:
             self.msg.error_message(e)
@@ -500,35 +500,59 @@ class SimpleSteem:
         return self.ticker
 
 
-    def steem_to_sbd(self, steem, account=None):
+    def steem_to_sbd(self, steem=0, price=0, account=None):
         ''' Uses the ticker to get the highest bid
         and moves the steem at that price.
-        '''
+        ''' 
         if not account:
             account = self.mainaccount
-        best_price  = self.dex_ticker()['highest_bid']
+        if steem == 0:
+            self.check_balances(account)
+            steem = self.steembal
+        elif steem > self.steembal:
+            self.msg.error_message("INSUFFICIENT FUNDS. CURRENT STEEM BAL: " 
+                                    + str(self.steembal))
+            return False
+        if price == 0:
+            price  = self.dex_ticker()['highest_bid']
         try:
-            self.dex.sell(steem, "STEEM", best_price, account=account)
+            self.dex.sell(steem, "STEEM", price, account=account)
         except Exception as e:
             self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + e)
             return False
         else:
+            self.msg.message("TRANSFERED " 
+                                + str(steem) 
+                                + " STEEM TO SBD AT THE PRICE OF: $"
+                                + str(price))
             return True
 
 
-    def sbd_to_steem(self, sbd, account=None):
+    def sbd_to_steem(self, sbd=0, price=0, account=None):
         ''' Uses the ticker to get the lowest ask
         and moves the sbd at that price.
         '''
         if not account:
             account = self.mainaccount
-        best_price  = self.dex_ticker()['lowest_ask']
+        if sbd == 0:
+            self.check_balances(account)
+            sbd = self.sbdbal
+        elif sbd > self.sbdbal:
+            self.msg.error_message("INSUFFICIENT FUNDS. CURRENT SBD BAL: " 
+                                    + str(self.sbdbal))
+            return False
+        if price == 0:
+            price  = self.dex_ticker()['lowest_ask']
         try:
             self.dex.sell(steem, "SBD", best_price, account=account)
         except Exception as e:
             self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + e)
             return False
         else:
+            self.msg.message("TRANSFERED " 
+                                + str(sbd) 
+                                + " STEEM TO SBD AT THE PRICE OF: $"
+                                + str(price))
             return True
 
 
@@ -584,6 +608,58 @@ class SimpleSteem:
             if not voted:
                 self.has_not_voted.append(f)
         return self.has_voted
+
+
+    def muted_me(self, account=None, limit=100):
+        ''' Fetches all those a given account is
+        following and sees if they have muted that
+        account.
+        '''
+        self.has_muted = []
+        if not account:
+            account = self.mainaccount
+        following = self.following(account, limit)
+        for f in following:
+            h = self.get_my_history(f)
+            for a in h:
+                if a[1]['op'][0] == "custom_json":
+                    j = a[1]['op'][1]['json']
+                    d = json.loads(j)
+                    try:
+                        d[1]
+                    except:
+                        pass
+                    else:
+                        for i in d[1]:
+                            if i == "what":
+                                if len(d[1]['what']) > 0:
+                                    if d[1]['what'][0] == "ignore":
+                                        if d[1]['follower'] == account:
+                                            self.msg.message("MUTED BY " + f)
+                                            self.has_muted.append(f)
+        return self.has_muted
+
+
+    def delegate(self, to, steempower):
+        ''' Delegates based on Steem Power rather
+        than by vests.
+        '''
+        self.global_props()
+        vests = self.util.sp_to_vests(steempower)
+        strvests = str(vests)
+        strvests = strvests + " VESTS"
+        try:
+            self.steem_instance().commit.delegate_vesting_shares(to, 
+                                                                strvests, 
+                                                                account=self.mainaccount)
+        except Exception as e:
+            self.msg.error_message("COULD NOT DELEGATE " 
+                                    + str(steempower) + " SP TO " 
+                                    + to + ": " + str(e))
+            return False
+        else:
+            self.msg.message("DELEGATED " + str(steempower) + " STEEM POWER TO " + str(to))
+            return True
 
 
 # EOF
