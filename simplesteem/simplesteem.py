@@ -83,11 +83,28 @@ class SimpleSteem:
                         self.callback_url, 
                         self.permissions)
         self.checkedaccount = None
+        self.accountinfo = None
+
+
+    def account(self, account=None):
+        for num_of_retries in range(default.max_retry):
+            if account is None:
+                account = self.mainaccount
+            if account == self.checkedaccount:
+                return self.accountinfo
+            self.checkedaccount = account
+            try:
+                self.accountinfo = self.steem_instance().get_account(account)
+            except Exception as e:
+                self.util.retry(("COULD NOT GET ACCOUNT INFO FOR " + account), 
+                    e, num_of_retries, default.wait_time)
+            else:
+                return self.accountinfo
 
 
     def steem_instance(self):
         ''' Returns the steem instance if it already exists
-        otherwise uses the goodnode method to feth a node
+        otherwise uses the goodnode method to fetch a node
         and instantiate the Steem class.
         '''
         if self.s:
@@ -123,7 +140,7 @@ class SimpleSteem:
                         and len(tokenkey) <= 64
                         and len(tokenkey) >= 16):
             pubkey = PrivateKey(tokenkey).pubkey or 0
-            pubkey2 = self.steem_instance().get_account(acctname)
+            pubkey2 = self.account(acctname)
             if (str(pubkey) 
                     == str(pubkey2['posting']['key_auths'][0][0])):
                 self.privatekey = tokenkey
@@ -247,39 +264,22 @@ class SimpleSteem:
         fetches a new balance if the account name has
         changed. 
         '''
-        for num_of_retries in range(default.max_retry):
-            if account is None:
-                account = self.mainaccount
-            try:
-                self.steempower
-            except:
-                pass
-            else:
-                if account == self.checkedaccount:
-                    return [self.sbdbal, self.steembal, self.steempower, 
-                            self.votepower, self.lastvotetime]
-            self.checkedaccount = account
-            try:
-                acct = self.steem_instance().get_account(account)
-            except Exception as e:
-                self.msg.error_message(e)
-            else:
-                self.sbdbal = Amount(acct['sbd_balance']).amount
-                self.steembal = Amount(acct['balance']).amount
-                self.votepower = acct['voting_power']
-                self.lastvotetime = acct['last_vote_time']
-                vs = Amount(acct['vesting_shares']).amount
-                dvests = Amount(acct['delegated_vesting_shares']).amount
-                rvests = Amount(acct['received_vesting_shares']).amount
-                vests = (float(vs) - float(dvests)) + float(rvests)
-                try:
-                    self.global_props()
-                    self.steempower = self.util.vests_to_sp(vests)
-                except Exception as e:
-                    self.msg.error_message(e)
-                else:
-                    return [self.sbdbal, self.steembal, self.steempower, 
-                            self.votepower, self.lastvotetime]
+        self.sbdbal = Amount(self.account(account)['sbd_balance']).amount
+        self.steembal = Amount(self.account(account)['balance']).amount
+        self.votepower = self.account(account)['voting_power']
+        self.lastvotetime = self.account(account)['last_vote_time']
+        vs = Amount(self.account(account)['vesting_shares']).amount
+        dvests = Amount(self.account(account)['delegated_vesting_shares']).amount
+        rvests = Amount(self.account(account)['received_vesting_shares']).amount
+        vests = (float(vs) - float(dvests)) + float(rvests)
+        try:
+            self.global_props()
+            self.steempower = self.util.vests_to_sp(vests)
+        except Exception as e:
+            self.msg.error_message(e)
+        else:
+            return [self.sbdbal, self.steembal, self.steempower, 
+                    self.votepower, self.lastvotetime]
 
 
     def transfer_funds(self, to, amount, denom, msg):
@@ -491,12 +491,19 @@ class SimpleSteem:
 
 
     def dex_ticker(self):
+        ''' Simply grabs the ticker using the 
+        steem_instance method and adds it
+        to a class variable.
+        '''
         self.dex = Dex(self.steem_instance())
         self.ticker = self.dex.get_ticker();
         return self.ticker
 
 
     def steem_to_sbd(self, steem, account=None):
+        ''' Uses the ticker to get the highest bid
+        and moves the steem at that price.
+        '''
         if not account:
             account = self.mainaccount
         best_price  = self.dex_ticker()['highest_bid']
@@ -510,6 +517,9 @@ class SimpleSteem:
 
 
     def sbd_to_steem(self, sbd, account=None):
+        ''' Uses the ticker to get the lowest ask
+        and moves the sbd at that price.
+        '''
         if not account:
             account = self.mainaccount
         best_price  = self.dex_ticker()['lowest_ask']
@@ -520,6 +530,60 @@ class SimpleSteem:
             return False
         else:
             return True
+
+
+    def vote_witness(self, witness, account=None):
+        ''' Uses the steem_instance method to
+        vote on a witness.
+        '''
+        if not account:
+            account = self.mainaccount
+        try:
+            self.steem_instance().approve_witness(witness, account=account)
+        except Exception as e:
+            self.msg.error_message("COULD NOT VOTE " 
+                                    + witness + " AS WITNESS: " + e)
+            return False
+        else:
+            return True
+
+
+    def unvote_witness(self, witness, account=None):
+        ''' Uses the steem_instance method to
+        unvote a witness.
+        '''
+        if not account:
+            account = self.mainaccount
+        try:
+            self.steem_instance().disapprove_witness(witness, account=account)
+        except Exception as e:
+            self.msg.error_message("COULD NOT UNVOTE " 
+                                    + witness + " AS WITNESS: " + e)
+            return False
+        else:
+            return True
+
+
+    def voted_me_witness(self, account=None, limit=100):
+        ''' Fetches all those a given account is
+        following and sees if they have voted that
+        account as witness.
+        '''
+        if not account:
+            account = self.mainaccount
+        self.has_voted = []
+        self.has_not_voted = []
+        following = self.following(account, limit)
+        for f in following:
+            wv = self.account(f)['witness_votes']
+            voted = False
+            for w in wv:
+                if w == account:
+                    self.has_voted.append(f)
+                    voted = True
+            if not voted:
+                self.has_not_voted.append(f)
+        return self.has_voted
 
 
 # EOF
