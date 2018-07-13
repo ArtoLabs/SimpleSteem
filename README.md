@@ -226,6 +226,87 @@ author = steem.blog[0]['comment']['author']
 returns a string
 ```
 
+
+### dex_ticker
+
+Simply grabs the ticker using the steem_instance method and adds it to a class variable.
+
+```
+ticker = steem.dex_ticker()
+returns a list of ticker variables
+```
+
+
+### steem_to_sbd
+
+Uses the ticker to get the highest bid and moves the steem at that price if no price is provided. If no amount of Steem is specified it checks the account balance and moves all available steem.
+
+```
+steem.steem_to_sbd(self, steem=0, price=0, account=None)
+returns boolean
+```
+
+
+### sbd_to_steem
+
+Uses the ticker to get the lowest ask and moves the sbd at that price if nor price is provided. If no amount of SBD is specified it checks the accoutn balance and moves all available SBD.
+
+```
+steem.sbd_to_steem(self, sbd=0, price=0, account=None)
+returns boolean
+```
+
+
+### vote_witness
+
+Uses the steem_instance method to vote on a witness.
+
+```
+steem.vote_witness(self, witness, account=None)
+retruns boolean
+```
+
+
+### unvote_witness
+
+Uses the steem_instance method to unvote a witness.
+
+```
+steem.unvote_witness(self, witness, account=None)
+returns boolean
+```
+
+
+### voted_me_witness
+
+Fetches all those a given account is following and sees if they have voted that account as witness.
+
+```
+steem.voted_me_witness(self, account=None, limit=100)
+returns a list of account names
+```
+
+
+### muted_me
+
+Fetches all those a given account is following and sees if they have muted that account.
+
+```
+steem.muted_me(self, account=None, limit=100)
+returns list of account names
+```
+
+
+### delegate
+
+Delegates based on Steem Power rather than by vests.
+
+```
+steem.delegate(self, to, steempower)
+returns boolean
+```
+
+
 # SteemConnect
 
 The SteemConnect utilities can be accessed in a very intuitive way. Just like the SimpleSteem class uses the **steem_instance** method, so the utilities use the **steem.connect.steemconnect** method in a similar way. To use the SteemConnect methods you must either have entered a client ID, client secret key, callback url, and permissions at the time of installing SimpleSteem (see installation instructions) or have instatiated the SimpleSteem class with the same information. 
