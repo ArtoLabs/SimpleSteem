@@ -88,6 +88,10 @@ class SimpleSteem:
 
 
     def account(self, account=None):
+        ''' Fetches account information and stores the
+        result in a class variable. Returns that variable
+        if the account has not changed.
+        '''
         for num_of_retries in range(default.max_retry):
             if account is None:
                 account = self.mainaccount
@@ -187,6 +191,9 @@ class SimpleSteem:
 
 
     def rshares_to_steem (self, rshares):
+        ''' Gets the reward pool balances
+        then calculates rshares to steem
+        '''
         self.reward_pool_balances()
         return round(
             rshares 
@@ -196,6 +203,16 @@ class SimpleSteem:
 
 
     def global_props(self):
+        ''' Retrieves the global properties
+        used to determine rates used for calculations
+        in converting steempower to vests etc.
+        Stores these in the Utilities class as that
+        is where the conversions take place, however
+        SimpleSteem is the class that contains
+        steem_instance, so to to preserve heirarchy 
+        and to avoid "spaghetti code", this method
+        exists in this class.
+        '''
         if self.util.info is None:
             self.util.info = self.steem_instance().get_dynamic_global_properties()
             self.util.total_vesting_fund_steem = Amount(self.util.info["total_vesting_fund_steem"]).amount
@@ -283,6 +300,8 @@ class SimpleSteem:
 
 
     def transfer_funds(self, to, amount, denom, msg):
+        ''' Transfer SBD or STEEM to the given account
+        '''
         try:
             self.steem_instance().commit.transfer(to, 
                 float(amount), denom, msg, self.mainaccount)
@@ -500,29 +519,29 @@ class SimpleSteem:
         return self.ticker
 
 
-    def steem_to_sbd(self, steem=0, price=0, account=None):
+    def steem_to_sbd(self, steemamt=0, price=0, account=None):
         ''' Uses the ticker to get the highest bid
         and moves the steem at that price.
-        ''' 
+        '''
         if not account:
             account = self.mainaccount
-        if steem == 0:
-            self.check_balances(account)
-            steem = self.steembal
-        elif steem > self.steembal:
+        self.check_balances(account)
+        if steemamt == 0:
+            steemamt = self.steembal
+        elif steemamt > self.steembal:
             self.msg.error_message("INSUFFICIENT FUNDS. CURRENT STEEM BAL: " 
                                     + str(self.steembal))
             return False
         if price == 0:
             price  = self.dex_ticker()['highest_bid']
         try:
-            self.dex.sell(steem, "STEEM", price, account=account)
+            self.dex.sell(steemamt, "STEEM", price, account=account)
         except Exception as e:
-            self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + e)
+            self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + str(e))
             return False
         else:
             self.msg.message("TRANSFERED " 
-                                + str(steem) 
+                                + str(steemamt) 
                                 + " STEEM TO SBD AT THE PRICE OF: $"
                                 + str(price))
             return True
@@ -534,24 +553,24 @@ class SimpleSteem:
         '''
         if not account:
             account = self.mainaccount
+        self.check_balances(account)
         if sbd == 0:
-            self.check_balances(account)
             sbd = self.sbdbal
         elif sbd > self.sbdbal:
             self.msg.error_message("INSUFFICIENT FUNDS. CURRENT SBD BAL: " 
                                     + str(self.sbdbal))
             return False
         if price == 0:
-            price  = self.dex_ticker()['lowest_ask']
+            price = 1 / self.dex_ticker()['lowest_ask']
         try:
-            self.dex.sell(steem, "SBD", best_price, account=account)
+            self.dex.sell(sbd, "SBD", price, account=account)
         except Exception as e:
-            self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + e)
+            self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + str(e))
             return False
         else:
             self.msg.message("TRANSFERED " 
                                 + str(sbd) 
-                                + " STEEM TO SBD AT THE PRICE OF: $"
+                                + " SBD TO STEEM AT THE PRICE OF: $"
                                 + str(price))
             return True
 
