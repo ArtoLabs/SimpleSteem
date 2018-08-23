@@ -14,8 +14,13 @@ class MakeConfig:
         keys = self.enter_config_value("keys", '[]')
         nodes = self.enter_config_value("nodes", 
                 '["https://steemd.minnowsupportproject.org",'
-                + '"https://steemd.privex.io","https://gtg.steem.house:8090",'
-                + '"https://steemd.pevo.science","https://rpc.steemliberator.com"]')
+                + '"https://rpc.buildteam.io",'
+                + '"https://rpc.curiesteem.com",'
+                + '"https://gtg.steem.house:8090",'
+                + '"https://rpc.steemliberator.com",'
+                + '"https://appbase.buildteam.io",'
+                + '"https://rpc.steemviz.com",'
+                + '"https://steemd.privex.io"]')
         client_id = self.add_quotes(self.enter_config_value("client_id"))
         client_secret = self.add_quotes(self.enter_config_value("client_secret"))
         callback_url = self.add_quotes(self.enter_config_value("callback_url"))
