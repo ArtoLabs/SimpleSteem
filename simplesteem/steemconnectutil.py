@@ -25,14 +25,16 @@ class SteemConnect:
         ''' Initializes the SteemConnect Client
         class
         '''
-        if self.sc:
+        if self.sc is not None:
             return self.sc
-        if accesstoken:
+        if accesstoken is not None:
             self.accesstoken = accesstoken
-        if self.accesstoken:
-            self.sc = Client(access_token=self.accesstoken)
-        else:
+        if self.accesstoken is None:
             self.sc = Client(client_id=self.client_id, 
+                            client_secret=self.client_secret)
+        else:
+            self.sc = Client(access_token=self.accesstoken,
+                            client_id=self.client_id, 
                             client_secret=self.client_secret)
         return self.sc
 
