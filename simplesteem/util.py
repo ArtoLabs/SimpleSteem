@@ -22,23 +22,48 @@ class Util:
         self.currentnode = 0
 
 
+    def current_node(self, listlength):
+        newnodenumber = 0
+        path = os.path.dirname(os.path.abspath(__file__)) + "/node.dat"
+        try:
+            with open(path, 'r') as fh:
+                try:
+                    self.currentnode = fh.read()
+                except Exception as e:
+                    self.msg.error_message(e)
+                finally:
+                    fh.close()
+        except Exception as e:
+            self.msg.error_message(e)
+        if int(self.currentnode) >= int(listlength):
+            self.currentnode = 0
+        else:
+            newnodenumber = int(self.currentnode) + 1
+        with open(path, 'w+') as fh:
+            try:
+                fh.write(str(newnodenumber))
+            except Exception as e:
+                self.msg.error_message(e)
+            finally:
+                fh.close()
+        return int(self.currentnode)
+
+
     def goodnode(self, nodelist):
         ''' Goes through the provided list
         and returns the first server node
         that does not return an error.
         '''
-        for n in range(self.currentnode, len(nodelist)-1):
-            req = urllib.request.Request(url=nodelist[n])
+        l = len(nodelist)
+        for n in range(self.current_node(l), l):
+            self.msg.message("Trying node " + str(n) + ": " + nodelist[n])
             try:
-                self.msg.message("Trying node " + str(n) + ": " + nodelist[n])
+                req = urllib.request.Request(url=nodelist[n])
                 urllib.request.urlopen(req)
             except HTTPError as e:
                 self.msg.error_message(e)
+                self.currentnode = int(self.currentnode) + 1
             else:
-                if self.currentnode == (len(nodelist)-1):
-                    self.currentnode = 0
-                else:
-                    self.currentnode = n + 1;
                 self.msg.message("Using " + nodelist[n])
                 return nodelist[n]
 
@@ -59,14 +84,13 @@ class Util:
         return [temp2[0], temp2[1]]
 
 
-    def days_back(self, date):
+    def minutes_back(self, date):
         ''' Gives a number (integer) of days
         since a given date
         '''
-        daysback = (datetime.now() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).days
-        if daysback < 0:
-            daysback = 0
-        return daysback
+        secondsback = (datetime.utcnow() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).seconds
+        minutesback = secondsback / 60
+        return int(minutesback)
 
 
     def scale_vote(self, value):
