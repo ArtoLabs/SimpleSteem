@@ -101,10 +101,15 @@ class SimpleSteem:
             try:
                 self.accountinfo = self.steem_instance().get_account(account)
             except Exception as e:
-                self.util.retry(("COULD NOT GET ACCOUNT INFO FOR " + account), 
+                self.util.retry(("COULD NOT GET ACCOUNT INFO FOR " + str(account)), 
                     e, num_of_retries, default.wait_time)
+                self.s = None
             else:
-                return self.accountinfo
+                if self.accountinfo is None:
+                    self.msg.error_message("COULD NOT FIND ACCOUNT: " + str(account))
+                    return False
+                else:
+                    return self.accountinfo
 
 
     def steem_instance(self):
@@ -115,12 +120,14 @@ class SimpleSteem:
         if self.s:
             return self.s
         for num_of_retries in range(default.max_retry):
+            node = self.util.goodnode(self.nodes)
             try:
                 self.s = Steem(keys=self.keys, 
-                    nodes=[self.util.goodnode(self.nodes)])
+                    nodes=[node])
             except Exception as e:
                 self.util.retry("COULD NOT GET STEEM INSTANCE", 
                     e, num_of_retries, default.wait_time)
+                self.s = None
             else:
                 return self.s
         return False
@@ -221,7 +228,7 @@ class SimpleSteem:
         return self.util.info
 
 
-    def current_vote_value(self, *kwargs):
+    def current_vote_value(self, **kwargs):
         ''' Ensures the needed variables are
         created and set to defaults although
         a variable number of variables are given.
@@ -250,53 +257,58 @@ class SimpleSteem:
         except:
             self.votepower=0
         try:
-            self.account
+            self.accountname
         except:
-            self.account=None              
-        if self.account is None:
-            self.account = self.mainaccount
-        if (self.lastvotetime is None 
-                        or self.steempower == 0 
-                        or self.votepower == 0):
-            self.check_balances(self.account)
-        self.voteweight = self.util.scale_vote(self.voteweight)
-        if self.votepower > 0 and self.votepower < 101:
-            self.votepower = self.util.scale_vote(self.votepower) 
-        else:
-            self.votepower = (self.votepower 
-                            + self.util.calc_regenerated(
-                            self.lastvotetime))
-        self.vpow = round(self.votepower / 100, 2)
-        self.global_props()
-        self.rshares = self.util.sp_to_rshares(self.steempower, 
-                                        self.votepower, 
-                                        self.voteweight)
-        self.votevalue = self.rshares_to_steem(self.rshares)
-        return self.votevalue
+            self.accountname=None              
+        if self.accountname is None:
+            self.accountname = self.mainaccount
+        if self.accountname == self.checkedaccount:
+            return self.votevalue
+        self.checkedaccount = self.accountname    
+        if self.check_balances(self.accountname) is not False:
+            if self.voteweight > 0 and self.voteweight < 101:
+                self.voteweight = self.util.scale_vote(self.voteweight)
+            if self.votepower > 0 and self.votepower < 101:
+                self.votepower = self.util.scale_vote(self.votepower) 
+            else:
+                self.votepower = (self.votepower 
+                                + self.util.calc_regenerated(
+                                self.lastvotetime))
+            self.vpow = round(self.votepower / 100, 2)
+            self.global_props()
+            self.rshares = self.util.sp_to_rshares(self.steempower, 
+                                            self.votepower, 
+                                            self.voteweight)
+            self.votevalue = self.rshares_to_steem(self.rshares)
+            return self.votevalue
+        return None
 
 
     def check_balances(self, account=None):
         ''' Fetches an account balance and makes
         necessary conversions
         '''
-        self.sbdbal = Amount(self.account(account)['sbd_balance']).amount
-        self.steembal = Amount(self.account(account)['balance']).amount
-        self.votepower = self.account(account)['voting_power']
-        self.lastvotetime = self.account(account)['last_vote_time']
-        vs = Amount(self.account(account)['vesting_shares']).amount
-        dvests = Amount(self.account(account)['delegated_vesting_shares']).amount
-        rvests = Amount(self.account(account)['received_vesting_shares']).amount
-        vests = (float(vs) - float(dvests)) + float(rvests)
-        try:
-            self.global_props()
-            self.steempower_delegated = self.util.vests_to_sp(dvests)
-            self.steempower_raw = self.util.vests_to_sp(vs)
-            self.steempower = self.util.vests_to_sp(vests)
-        except Exception as e:
-            self.msg.error_message(e)
-        else:
-            return [self.sbdbal, self.steembal, self.steempower, 
-                    self.votepower, self.lastvotetime]
+        a = self.account(account)
+        if a:
+            self.sbdbal = Amount(a['sbd_balance']).amount
+            self.steembal = Amount(a['balance']).amount
+            self.votepower = a['voting_power']
+            self.lastvotetime = a['last_vote_time']
+            vs = Amount(a['vesting_shares']).amount
+            dvests = Amount(a['delegated_vesting_shares']).amount
+            rvests = Amount(a['received_vesting_shares']).amount
+            vests = (float(vs) - float(dvests)) + float(rvests)
+            try:
+                self.global_props()
+                self.steempower_delegated = self.util.vests_to_sp(dvests)
+                self.steempower_raw = self.util.vests_to_sp(vs)
+                self.steempower = self.util.vests_to_sp(vests)
+            except Exception as e:
+                self.msg.error_message(e)
+            else:
+                return [self.sbdbal, self.steembal, self.steempower, 
+                        self.votepower, self.lastvotetime]
+        return False
 
 
     def transfer_funds(self, to, amount, denom, msg):
@@ -312,7 +324,7 @@ class SimpleSteem:
             return True
 
 
-    def get_my_history(self, account=None, limit=100):
+    def get_my_history(self, account=None, limit=10000):
         ''' Fetches the account history from
         most recent back
         '''
@@ -345,17 +357,20 @@ class SimpleSteem:
             except Exception as e:
                 self.util.retry("COULD NOT POST '" + title + "'", 
                     e, num_of_retries, 10)
+                self.s = None
             else:
-                time.sleep(20)
+                self.s = None
+                time.sleep(200)
                 checkident = self.recent_post()
                 ident = self.util.identifier(self.mainaccount, permlink)
                 if checkident == ident:
                     return True
                 else:
-                    self.util.retry('''A POST JUST CREATED 
-                                    WAS NOT FOUND IN THE 
-                                    BLOCKCHAIN {}'''.format(title), 
-                                    e, num_of_retries, default.wait_time)
+                    self.util.retry('A POST JUST CREATED WAS NOT FOUND IN THE '
+                                    + 'BLOCKCHAIN {}'''.format(title), 
+                                    "Identifiers do not match", 
+                                    num_of_retries, default.wait_time)
+                    self.s = None
 
 
     def reply(self, permlink, msgbody):
@@ -376,6 +391,7 @@ class SimpleSteem:
             except Exception as e:
                 self.util.retry("COULD NOT REPLY TO " + permlink, 
                     e, num_of_retries, default.wait_time)
+                self.s = None
             else:
                 self.msg.message("Replied to " + permlink)
                 time.sleep(20)
@@ -429,7 +445,7 @@ class SimpleSteem:
             return followingnames
 
 
-    def recent_post(self, author=None, daysback=0):
+    def recent_post(self, author=None, daysback=0, flag=0):
         ''' Returns the most recent post from the account
         given. If the days back is greater than zero
         then the most recent post is returned for that
@@ -443,27 +459,32 @@ class SimpleSteem:
             try:
                 self.blog = self.steem_instance().get_blog(author, 0, 30)
             except Exception as e:
-                self.util.retry('''COULD NOT GET THE 
-                                MOST RECENT POST FOR 
-                                {}'''.format(author), 
+                self.util.retry('COULD NOT GET THE '
+                                + 'MOST RECENT POST FOR '
+                                + '{}'.format(author), 
                                 e, num_of_retries, default.wait_time)
+                self.s = None
             else:
                 for p in self.blog:
-                    age = self.util.days_back(p['comment']['created'])
-                    if age < 0:
-                        age = 0
-                    if (p['comment']['author'] == author 
-                                and age == daysback):
-                        return self.util.identifier(
-                            p['comment']['author'], 
-                            p['comment']['permlink'])
+                    ageinminutes = self.util.minutes_back(p['comment']['created'])
+                    ageindays = (ageinminutes / 60) / 24
+                    if (int(ageindays) == daysback
+                            and p['comment']['author'] == author):
+                        if flag == 1 and ageinminutes < 30:
+                            return None
+                        else:
+                            return self.util.identifier(
+                                p['comment']['author'],
+                                p['comment']['permlink'])
+                    else:
+                        return None
 
 
     def vote_history(self, permlink, author=None):
         ''' Returns the raw vote history of a
         given post from a given account
         '''
-        if not author:
+        if author is None:
             author = self.mainaccount
         return self.steem_instance().get_active_votes(author, permlink)
 
@@ -487,6 +508,7 @@ class SimpleSteem:
                     self.util.retry('''COULD NOT VOTE ON 
                                     {}'''.format(identifier), 
                                     e, num_of_retries, default.wait_time)
+                    self.s = None
             else:
                 return True
 
@@ -500,11 +522,12 @@ class SimpleSteem:
                 self.steem_instance().resteem(
                     identifier, self.mainaccount)
                 self.msg.message("resteemed " + identifier)
-                time.sleep(20)
+                time.sleep(10)
             except Exception as e:
                 self.util.retry('''COULD NOT RESTEEM 
                                 {}'''.format(identifier), 
                                 e, num_of_retries, default.wait_time)
+                self.s = None
             else:
                 return True
 
@@ -525,26 +548,28 @@ class SimpleSteem:
         '''
         if not account:
             account = self.mainaccount
-        self.check_balances(account)
-        if steemamt == 0:
-            steemamt = self.steembal
-        elif steemamt > self.steembal:
-            self.msg.error_message("INSUFFICIENT FUNDS. CURRENT STEEM BAL: " 
-                                    + str(self.steembal))
-            return False
-        if price == 0:
-            price  = self.dex_ticker()['highest_bid']
-        try:
-            self.dex.sell(steemamt, "STEEM", price, account=account)
-        except Exception as e:
-            self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + str(e))
-            return False
+        if self.check_balances(account):
+            if steemamt == 0:
+                steemamt = self.steembal
+            elif steemamt > self.steembal:
+                self.msg.error_message("INSUFFICIENT FUNDS. CURRENT STEEM BAL: " 
+                                        + str(self.steembal))
+                return False
+            if price == 0:
+                price = self.dex_ticker()['highest_bid']
+            try:
+                self.dex.sell(steemamt, "STEEM", price, account=account)
+            except Exception as e:
+                self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + str(e))
+                return False
+            else:
+                self.msg.message("TRANSFERED " 
+                                    + str(steemamt) 
+                                    + " STEEM TO SBD AT THE PRICE OF: $"
+                                    + str(price))
+                return True
         else:
-            self.msg.message("TRANSFERED " 
-                                + str(steemamt) 
-                                + " STEEM TO SBD AT THE PRICE OF: $"
-                                + str(price))
-            return True
+            return False
 
 
     def sbd_to_steem(self, sbd=0, price=0, account=None):
@@ -553,26 +578,28 @@ class SimpleSteem:
         '''
         if not account:
             account = self.mainaccount
-        self.check_balances(account)
-        if sbd == 0:
-            sbd = self.sbdbal
-        elif sbd > self.sbdbal:
-            self.msg.error_message("INSUFFICIENT FUNDS. CURRENT SBD BAL: " 
-                                    + str(self.sbdbal))
-            return False
-        if price == 0:
-            price = 1 / self.dex_ticker()['lowest_ask']
-        try:
-            self.dex.sell(sbd, "SBD", price, account=account)
-        except Exception as e:
-            self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + str(e))
-            return False
+        if self.check_balances(account):
+            if sbd == 0:
+                sbd = self.sbdbal
+            elif sbd > self.sbdbal:
+                self.msg.error_message("INSUFFICIENT FUNDS. CURRENT SBD BAL: " 
+                                        + str(self.sbdbal))
+                return False
+            if price == 0:
+                price = 1 / self.dex_ticker()['lowest_ask']
+            try:
+                self.dex.sell(sbd, "SBD", price, account=account)
+            except Exception as e:
+                self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + str(e))
+                return False
+            else:
+                self.msg.message("TRANSFERED " 
+                                    + str(sbd) 
+                                    + " SBD TO STEEM AT THE PRICE OF: $"
+                                    + str(price))
+                return True
         else:
-            self.msg.message("TRANSFERED " 
-                                + str(sbd) 
-                                + " SBD TO STEEM AT THE PRICE OF: $"
-                                + str(price))
-            return True
+            return False
 
 
     def vote_witness(self, witness, account=None):
@@ -635,9 +662,12 @@ class SimpleSteem:
         account.
         '''
         self.has_muted = []
-        if not account:
+        if account is None:
             account = self.mainaccount
         following = self.following(account, limit)
+        if following is False:
+            self.msg.error_message("COULD NOT GET FOLLOWING FOR MUTED")
+            return False
         for f in following:
             h = self.get_my_history(f)
             for a in h:
