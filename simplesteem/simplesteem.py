@@ -85,6 +85,7 @@ class SimpleSteem:
                         self.permissions)
         self.checkedaccount = None
         self.accountinfo = None
+        self.blognumber = 0
 
 
     def account(self, account=None):
@@ -289,7 +290,7 @@ class SimpleSteem:
         necessary conversions
         '''
         a = self.account(account)
-        if a:
+        if a is not False:
             self.sbdbal = Amount(a['sbd_balance']).amount
             self.steembal = Amount(a['balance']).amount
             self.votepower = a['voting_power']
@@ -348,19 +349,21 @@ class SimpleSteem:
         '''
         for num_of_retries in range(default.max_retry):
             try:
+                self.msg.message("Attempting to post " + permlink)
                 self.steem_instance().post(title, 
                                             body, 
                                             self.mainaccount, 
                                             permlink, 
                                             None, None, None, None, 
-                                            tags, None, True)   
+                                            tags, None, False)   
             except Exception as e:
                 self.util.retry("COULD NOT POST '" + title + "'", 
                     e, num_of_retries, 10)
                 self.s = None
             else:
+                self.msg.message("Post seems successful. Wating 60 seconds before verifying...")
                 self.s = None
-                time.sleep(200)
+                time.sleep(60)
                 checkident = self.recent_post()
                 ident = self.util.identifier(self.mainaccount, permlink)
                 if checkident == ident:
@@ -465,19 +468,22 @@ class SimpleSteem:
                                 e, num_of_retries, default.wait_time)
                 self.s = None
             else:
+                i = 0
                 for p in self.blog:
-                    ageinminutes = self.util.minutes_back(p['comment']['created'])
-                    ageindays = (ageinminutes / 60) / 24
-                    if (int(ageindays) == daysback
-                            and p['comment']['author'] == author):
-                        if flag == 1 and ageinminutes < 30:
-                            return None
+                    if p['comment']['author'] == author:
+                        self.blognumber = i
+                        ageinminutes = self.util.minutes_back(p['comment']['created'])
+                        ageindays = (ageinminutes / 60) / 24
+                        if (int(ageindays) == daysback):
+                            if flag == 1 and ageinminutes < 15:
+                                return None
+                            else:
+                                return self.util.identifier(
+                                    p['comment']['author'],
+                                    p['comment']['permlink'])
                         else:
-                            return self.util.identifier(
-                                p['comment']['author'],
-                                p['comment']['permlink'])
-                    else:
-                        return None
+                            return None
+                    i += 1
 
 
     def vote_history(self, permlink, author=None):
