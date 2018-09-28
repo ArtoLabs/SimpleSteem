@@ -18,7 +18,6 @@ class MakeConfig:
                 + '"https://rpc.curiesteem.com",'
                 + '"https://gtg.steem.house:8090",'
                 + '"https://rpc.steemliberator.com",'
-                + '"https://appbase.buildteam.io",'
                 + '"https://rpc.steemviz.com",'
                 + '"https://steemd.privex.io"]')
         client_id = self.add_quotes(self.enter_config_value("client_id"))
