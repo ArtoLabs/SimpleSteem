@@ -88,7 +88,11 @@ class Util:
         ''' Gives a number (integer) of days
         since a given date
         '''
-        secondsback = (datetime.utcnow() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S')).seconds
+        elapsed = (datetime.utcnow() - datetime.strptime(date,'%Y-%m-%dT%H:%M:%S'))
+        if elapsed.days > 0:
+            secondsback = (elapsed.days * 24 * 60 * 60) + elapsed.seconds
+        else:
+            secondsback = elapsed.seconds
         minutesback = secondsback / 60
         return int(minutesback)
 
@@ -99,8 +103,8 @@ class Util:
         for certain method calls
         '''
         value = int(value) * 100
-        if value < 150:
-            value = 150
+        if value < 100:
+            value = 100
         if value > 10000:
             value = 10000
         return value
