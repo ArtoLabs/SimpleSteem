@@ -86,6 +86,7 @@ class SimpleSteem:
         self.checkedaccount = None
         self.accountinfo = None
         self.blognumber = 0
+        self.reward_balance = 0
 
 
     def account(self, account=None):
@@ -184,9 +185,9 @@ class SimpleSteem:
         Returns the reward balance, all recent claims
         and the current price of steem.
         '''
-        try:
-            self.reward_balance
-        except:
+        if self.reward_balance > 0:
+            return self.reward_balance
+        else:
             reward_fund = self.steem_instance().get_reward_fund()
             self.reward_balance = Amount(
                 reward_fund["reward_balance"]).amount
@@ -254,31 +255,28 @@ class SimpleSteem:
         except:
             self.voteweight=100
         try:
-            self.votepower
+            self.votepoweroverride
         except:
-            self.votepower=0
+            self.votepoweroverride=0
         try:
             self.accountname
         except:
             self.accountname=None              
         if self.accountname is None:
-            self.accountname = self.mainaccount
-        if self.accountname == self.checkedaccount:
-            return self.votevalue
-        self.checkedaccount = self.accountname    
+            self.accountname = self.mainaccount   
         if self.check_balances(self.accountname) is not False:
             if self.voteweight > 0 and self.voteweight < 101:
                 self.voteweight = self.util.scale_vote(self.voteweight)
-            if self.votepower > 0 and self.votepower < 101:
-                self.votepower = self.util.scale_vote(self.votepower) 
+            if self.votepoweroverride > 0 and self.votepoweroverride < 101:
+                self.votepoweroverride = self.util.scale_vote(self.votepoweroverride) 
             else:
-                self.votepower = (self.votepower 
+                self.votepoweroverride = (self.votepower 
                                 + self.util.calc_regenerated(
                                 self.lastvotetime))
-            self.vpow = round(self.votepower / 100, 2)
+            self.vpow = round(self.votepoweroverride / 100, 2)
             self.global_props()
             self.rshares = self.util.sp_to_rshares(self.steempower, 
-                                            self.votepower, 
+                                            self.votepoweroverride, 
                                             self.voteweight)
             self.votevalue = self.rshares_to_steem(self.rshares)
             return self.votevalue
@@ -290,7 +288,7 @@ class SimpleSteem:
         necessary conversions
         '''
         a = self.account(account)
-        if a is not False:
+        if a is not False and a is not None:
             self.sbdbal = Amount(a['sbd_balance']).amount
             self.steembal = Amount(a['balance']).amount
             self.votepower = a['voting_power']
