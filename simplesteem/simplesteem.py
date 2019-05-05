@@ -87,6 +87,7 @@ class SimpleSteem:
         self.accountinfo = None
         self.blognumber = 0
         self.reward_balance = 0
+        self.price_of_steem = 0
 
 
     def account(self, account=None):
@@ -196,7 +197,12 @@ class SimpleSteem:
                 self.steem_instance(
                 ).get_current_median_history_price()["base"]
                 ).amount
-        return [self.reward_balance, self.recent_claims, self.base]
+            self.quote = Amount(
+                self.steem_instance(
+                ).get_current_median_history_price()["quote"]
+                ).amount
+            self.price_of_steem = self.base / self.quote
+        return [self.reward_balance, self.recent_claims, self.price_of_steem]
 
 
     def rshares_to_steem (self, rshares):
@@ -208,7 +214,7 @@ class SimpleSteem:
             rshares 
             * self.reward_balance 
             / self.recent_claims 
-            * self.base, 4)
+            * self.price_of_steem, 4)
 
 
     def global_props(self):
@@ -468,19 +474,20 @@ class SimpleSteem:
             else:
                 i = 0
                 for p in self.blog:
-                    if p['comment']['author'] == author:
-                        self.blognumber = i
-                        ageinminutes = self.util.minutes_back(p['comment']['created'])
-                        ageindays = (ageinminutes / 60) / 24
-                        if (int(ageindays) == daysback):
-                            if flag == 1 and ageinminutes < 15:
-                                return None
+                    if p != "error":
+                        if p['comment']['author'] == author:
+                            self.blognumber = i
+                            ageinminutes = self.util.minutes_back(p['comment']['created'])
+                            ageindays = (ageinminutes / 60) / 24
+                            if (int(ageindays) == daysback):
+                                if flag == 1 and ageinminutes < 15:
+                                    return None
+                                else:
+                                    return self.util.identifier(
+                                        p['comment']['author'],
+                                        p['comment']['permlink'])
                             else:
-                                return self.util.identifier(
-                                    p['comment']['author'],
-                                    p['comment']['permlink'])
-                        else:
-                            return None
+                                return None
                     i += 1
 
 

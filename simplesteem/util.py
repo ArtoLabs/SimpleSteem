@@ -72,7 +72,8 @@ class Util:
         ''' Converts an author's name and permlink 
         into an identifier
         '''
-        return ("@" + author + "/" + permlink)
+        strlink = ("@" + author + "/" + permlink)
+        return strlink
 
 
     def permlink(self, identifier):
