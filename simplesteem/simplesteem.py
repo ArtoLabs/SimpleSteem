@@ -71,8 +71,9 @@ class SimpleSteem:
             self.screenmode = config.screenmode
         self.s = None
         self.c = None
+        self.e = None
         self.dex = None
-        self.msg = Msg("simplesteem.log", 
+        self.msg = Msg("simplesteem.log",
                         self.logpath, 
                         self.screenmode)
         self.util = util.Util("simplesteem.log", 
@@ -107,6 +108,7 @@ class SimpleSteem:
                 self.util.retry(("COULD NOT GET ACCOUNT INFO FOR " + str(account)), 
                     e, num_of_retries, default.wait_time)
                 self.s = None
+                self.e = e
             else:
                 if self.accountinfo is None:
                     self.msg.error_message("COULD NOT FIND ACCOUNT: " + str(account))
@@ -131,6 +133,7 @@ class SimpleSteem:
                 self.util.retry("COULD NOT GET STEEM INSTANCE", 
                     e, num_of_retries, default.wait_time)
                 self.s = None
+                self.e = e
             else:
                 return self.s
         return False
@@ -310,6 +313,7 @@ class SimpleSteem:
                 self.steempower = self.util.vests_to_sp(vests)
             except Exception as e:
                 self.msg.error_message(e)
+                self.e = e
             else:
                 return [self.sbdbal, self.steembal, self.steempower, 
                         self.votepower, self.lastvotetime]
@@ -324,6 +328,7 @@ class SimpleSteem:
                 float(amount), denom, msg, self.mainaccount)
         except Exception as e:
             self.msg.error_message(e)
+            self.e = e
             return False
         else:
             return True
@@ -340,6 +345,7 @@ class SimpleSteem:
                 account, -1, limit)
         except Exception as e:
             self.msg.error_message(e)
+            self.e = e
             return False
         else:
             return h
@@ -364,6 +370,7 @@ class SimpleSteem:
                 self.util.retry("COULD NOT POST '" + title + "'", 
                     e, num_of_retries, 10)
                 self.s = None
+                self.e = e
             else:
                 self.msg.message("Post seems successful. Wating 60 seconds before verifying...")
                 self.s = None
@@ -399,6 +406,7 @@ class SimpleSteem:
                 self.util.retry("COULD NOT REPLY TO " + permlink, 
                     e, num_of_retries, default.wait_time)
                 self.s = None
+                self.e = e
             else:
                 self.msg.message("Replied to " + permlink)
                 time.sleep(20)
@@ -413,6 +421,7 @@ class SimpleSteem:
                 ['blog'], self.mainaccount)
         except Exception as e:
             self.msg.error_message(e)
+            self.e = e
             return False
         else:
             return True
@@ -426,6 +435,7 @@ class SimpleSteem:
                 ['blog'], self.mainaccount)
         except Exception as e:
             self.msg.error_message(e)
+            self.e = e
             return False
         else:
             return True
@@ -445,6 +455,7 @@ class SimpleSteem:
                 '', 'blog', limit)
         except Exception as e:
             self.msg.error_message(e)
+            self.e = e
             return False
         else:
             for a in self.followed:
@@ -471,6 +482,7 @@ class SimpleSteem:
                                 + '{}'.format(author), 
                                 e, num_of_retries, default.wait_time)
                 self.s = None
+                self.e = e
             else:
                 i = 0
                 for p in self.blog:
@@ -520,6 +532,7 @@ class SimpleSteem:
                                     {}'''.format(identifier), 
                                     e, num_of_retries, default.wait_time)
                     self.s = None
+                self.e = e
             else:
                 return True
 
@@ -539,6 +552,7 @@ class SimpleSteem:
                                 {}'''.format(identifier), 
                                 e, num_of_retries, default.wait_time)
                 self.s = None
+                self.e = e
             else:
                 return True
 
@@ -572,6 +586,7 @@ class SimpleSteem:
                 self.dex.sell(steemamt, "STEEM", price, account=account)
             except Exception as e:
                 self.msg.error_message("COULD NOT SELL STEEM FOR SBD: " + str(e))
+                self.e = e
                 return False
             else:
                 self.msg.message("TRANSFERED " 
@@ -602,6 +617,7 @@ class SimpleSteem:
                 self.dex.sell(sbd, "SBD", price, account=account)
             except Exception as e:
                 self.msg.error_message("COULD NOT SELL SBD FOR STEEM: " + str(e))
+                self.e = e
                 return False
             else:
                 self.msg.message("TRANSFERED " 
@@ -624,6 +640,7 @@ class SimpleSteem:
         except Exception as e:
             self.msg.error_message("COULD NOT VOTE " 
                                     + witness + " AS WITNESS: " + e)
+            self.e = e
             return False
         else:
             return True
@@ -640,6 +657,7 @@ class SimpleSteem:
         except Exception as e:
             self.msg.error_message("COULD NOT UNVOTE " 
                                     + witness + " AS WITNESS: " + e)
+            self.e = e
             return False
         else:
             return True
@@ -716,10 +734,32 @@ class SimpleSteem:
             self.msg.error_message("COULD NOT DELEGATE " 
                                     + str(steempower) + " SP TO " 
                                     + to + ": " + str(e))
+            self.e = e
             return False
         else:
             self.msg.message("DELEGATED " + str(steempower) + " STEEM POWER TO " + str(to))
             return True
+
+
+    def create_account(new_account, new_account_master_key, creator):
+        self.steem_instance().create_account(
+            new_account,
+            delegation_fee_steem="1 STEEM",
+            password=new_account_master_key,
+            creator=creator,
+        )
+
+        keys = {}
+        for key_type in ['posting','active','owner','memo']:
+            private_key = PasswordKey(
+                new_account, new_account_master_key, key_type).get_private_key()
+
+            keys[key_type] = {
+                "public": str(private_key.pubkey),
+                "private": str(private_key),
+            }
+
+        return keys
 
 
 # EOF
