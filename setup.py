@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     python_requires='>=3.0',
     name='SimpleSteem',
-    version='1.1.14',
+    version='1.1.18',
     packages=['simplesteem'],
     license='MIT',
     keywords='steem steemit steem-python python3',
@@ -12,6 +12,7 @@ setup(
     author_email='artopium@gmail.com',
     install_requires=[
         'python-dateutil',
+        'urllib3==1.24.2',
         'steem==1.0.0',
         'steemconnect==0.0.2',
         'screenlogger==1.3.1',
