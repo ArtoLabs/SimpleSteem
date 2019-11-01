@@ -744,11 +744,10 @@ class SimpleSteem:
     def create_account(new_account, new_account_master_key, creator):
         self.steem_instance().create_account(
             new_account,
-            delegation_fee_steem="1 STEEM",
+            delegation_fee_steem="3 STEEM",
             password=new_account_master_key,
             creator=creator,
         )
-
         keys = {}
         for key_type in ['posting','active','owner','memo']:
             private_key = PasswordKey(
@@ -758,7 +757,6 @@ class SimpleSteem:
                 "public": str(private_key.pubkey),
                 "private": str(private_key),
             }
-
         return keys
 
 
