@@ -12,7 +12,7 @@ setup(
     author_email='artopium@gmail.com',
     install_requires=[
         'python-dateutil',
-        'urllib3==1.24.2',
+        'urllib3==1.26.5',
         'steem==1.0.0',
         'steemconnect==0.0.2',
         'screenlogger==1.3.1',
